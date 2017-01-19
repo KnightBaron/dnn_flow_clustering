@@ -9,15 +9,21 @@ import gzip
 import cPickle as pickle
 from itertools import imap
 
+"""
+|----WINDOW_SIZE-----|
+<--DELTA-->|--------------------|
+
+"""
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 PCAP_FILE = "/home/knightbaron/data/equinix-chicago.dirA.20150917-132500.UTC.anon.pcap.gz"
-OUTPUT_FILE = "/home/knightbaron/data/data_X_500hz_noised.csv.gz"
-OUTPUT_FILE_NOIP = "/home/knightbaron/data/data_X_500hz_noised_noip.csv.gz"
-OUTPUT_FILE_NOMETA = "/home/knightbaron/data/data_X_500hz_noised_nometa.csv.gz"
+OUTPUT_FILE = "/home/knightbaron/data/data_500hz_noised.csv.gz"
+OUTPUT_FILE_NOIP = "/home/knightbaron/data/data_500hz_noised_noip.csv.gz"
+OUTPUT_FILE_NOMETA = "/home/knightbaron/data/data_500hz_noised_nometa.csv.gz"
 WINDOW_SIZE = 10000  # ms (10 seconds), must be divisible by SAMPLING_RATE
 DELTA = 1000  # ms (1 seconds)
 SAMPLING_RATE = 2  # ms
-ADD_FLOW_SAMPLING_NOISE = False
+ADD_FLOW_SAMPLING_NOISE = True
 FLOW_SAMPLING_RATE = 0.8  # Range (0, 1]
 RANDOM_SEED = 42
 LOAD_PICKLED_FLOWS = False  # Load PCAP_FILE as pickled flows
@@ -67,8 +73,8 @@ if __name__ == "__main__":
                         flows[key].append((ts, ip.len))
 
                     # DEBUG
-                    if len(flows) > 10000:
-                        break
+                    # if len(flows) > 10000:
+                    #     break
                     # END DEBUG
 
                 except dpkt.dpkt.UnpackError:  # Skip non-IP packet
@@ -154,8 +160,8 @@ if __name__ == "__main__":
                         windows[window][sample_index] += packet[1]
                     except IndexError as e:
                         # Handle edge case where sample_index is right at the end of the window
-                        if sample_index == WINDOW_SIZE:
-                            sample_index = WINDOW_SIZE - SAMPLING_RATE
+                        if sample_index == (WINDOW_SIZE / SAMPLING_RATE):
+                            sample_index -= 1
                             windows[window][sample_index] += packet[1]
                         else:
                             raise e
@@ -178,8 +184,8 @@ if __name__ == "__main__":
                             complete_windows[window][sample_index] += packet[1]
                         except IndexError as e:
                             # Handle edge case where sample_index is right at the end of the window
-                            if sample_index == WINDOW_SIZE:
-                                sample_index = WINDOW_SIZE - SAMPLING_RATE
+                            if sample_index == (WINDOW_SIZE / SAMPLING_RATE):
+                                sample_index -= 1
                                 complete_windows[window][sample_index] += packet[1]
                             else:
                                 raise e
