@@ -116,7 +116,7 @@ def create_network(noised_x, cleaned_x):
             # decoder_l2 = tf.nn.sigmoid(tf.add(tf.matmul(decoder_l1, tf.transpose(weights["encoder_h2"])), biases["decoder_b2"]), name="decoder_l2")
             # decoder_l3 = tf.nn.sigmoid(tf.add(tf.matmul(decoder_l2, tf.transpose(weights["encoder_h1"])), biases["decoder_b3"]), name="decoder_l3")
 
-        cost = tf.reduce_mean(tf.square(tf.sub(cleaned_x, decoder_l3)), name="cost_op")
+        cost = tf.reduce_mean(tf.square(tf.subtract(cleaned_x, decoder_l3)), name="cost_op")
         tf.summary.scalar("cost", cost)
 
     return {
