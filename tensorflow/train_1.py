@@ -3,25 +3,26 @@ from tensorflow.python.client import timeline
 import numpy as np
 import math
 import logging
+import random
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
 RANDOM_SEED = 42
-# random.seed(RANDOM_SEED)
+random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 tf.set_random_seed(RANDOM_SEED)
 
 INPUT_FILE = "/work/pongsakorn-u/data_500hz_noised_noip/data_500hz_noised_noip.csv"
-LOG_PATH = "/work/pongsakorn-u/tensorflow_log/new"
+LOG_PATH = "/work/pongsakorn-u/tensorflow_log/10outputs_50batch_2700epochs"
 TOTAL_PARTS = 77
 WINDOW_SIZE = 5000
 META_FIELDS = 3  # Src IP, Dst IP, Port
 TOTAL_COLUMNS = (WINDOW_SIZE * 2) + META_FIELDS  # meta, noised, cleaned
 MAX_PACKETS_SIZE = 805744.0  # Bytes
 METADATA_SCALER = [1.0 / 1.0, 1.0 / 65535.0, 1.0 / 65535.0]  # Protocal, SrcPrt, DesPrt
-TOTAL_EPOCHS = 1000
+TOTAL_EPOCHS = 2700
 LEARNING_RATE = 0.001  # Adam's default learning rate
-BATCH_SIZE = 20
+BATCH_SIZE = 50
 
 # Network parameters
 N_INPUT = WINDOW_SIZE + META_FIELDS
@@ -174,3 +175,4 @@ if __name__ == "__main__":
 
         coord.request_stop()
         coord.join(threads)
+    logging.info("DONE")
