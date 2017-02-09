@@ -5,29 +5,28 @@ import math
 import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-
 RANDOM_SEED = 42
 # random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 tf.set_random_seed(RANDOM_SEED)
 
 INPUT_FILE = "/home/knightbaron/data/data_500hz_noised_noip/data_500hz_noised_noip.csv"
-LOG_PATH = "/home/knightbaron/tensorflow_log/new"
+LOG_PATH = "/home/knightbaron/tensorflow_log/5outputs_10batch_13500epochs"
 TOTAL_PARTS = 77
 WINDOW_SIZE = 5000
 META_FIELDS = 3  # Src IP, Dst IP, Port
 TOTAL_COLUMNS = (WINDOW_SIZE * 2) + META_FIELDS  # meta, noised, cleaned
 MAX_PACKETS_SIZE = 805744.0  # Bytes
 METADATA_SCALER = [1.0 / 1.0, 1.0 / 65535.0, 1.0 / 65535.0]  # Protocal, SrcPrt, DesPrt
-TOTAL_EPOCHS = 10000
+TOTAL_EPOCHS = 13500
 LEARNING_RATE = 0.001  # Adam's default learning rate
-BATCH_SIZE = 100
+BATCH_SIZE = 10
 
 # Network parameters
 N_INPUT = WINDOW_SIZE + META_FIELDS
 N_HIDDEN_1 = 5500
 N_HIDDEN_2 = 500
-N_HIDDEN_3 = 10
+N_HIDDEN_3 = 5
 
 
 def readers():
@@ -148,10 +147,10 @@ if __name__ == "__main__":
         sess.run(init)
 
         writer = tf.summary.FileWriter(LOG_PATH, graph=tf.get_default_graph())
+        run_metadata = tf.RunMetadata()
 
         for i in range(TOTAL_EPOCHS):
             if i % 100 == 0:
-                run_metadata = tf.RunMetadata()
                 _, summary = sess.run(
                     [train_step, tf.summary.merge_all()],
                     options=tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE),
@@ -174,3 +173,5 @@ if __name__ == "__main__":
 
         coord.request_stop()
         coord.join(threads)
+
+    logging.info("DONE")
