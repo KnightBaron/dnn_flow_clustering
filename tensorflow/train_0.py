@@ -3,15 +3,17 @@ from tensorflow.python.client import timeline
 import numpy as np
 import math
 import logging
+import random
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+
 RANDOM_SEED = 42
-# random.seed(RANDOM_SEED)
+random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
 tf.set_random_seed(RANDOM_SEED)
 
-INPUT_FILE = "/home/knightbaron/data/data_500hz_noised_noip/data_500hz_noised_noip.csv"
-LOG_PATH = "/home/knightbaron/tensorflow_log/5outputs_10batch_13500epochs"
+INPUT_FILE = "/work/pongsakorn-u/data_500hz_noised_noip/data_500hz_noised_noip.csv"
+LOG_PATH = "/work/pongsakorn-u/tensorflow_log/10outputs_10batch_13500epochs"
 TOTAL_PARTS = 77
 WINDOW_SIZE = 5000
 META_FIELDS = 3  # Src IP, Dst IP, Port
@@ -26,7 +28,7 @@ BATCH_SIZE = 10
 N_INPUT = WINDOW_SIZE + META_FIELDS
 N_HIDDEN_1 = 5500
 N_HIDDEN_2 = 500
-N_HIDDEN_3 = 5
+N_HIDDEN_3 = 10
 
 
 def readers():
@@ -138,6 +140,10 @@ if __name__ == "__main__":
     autoencoder = create_network(noised_examples_batch, cleaned_examples_batch)
     train_step = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(autoencoder["cost"])
 
+    # config = tf.ConfigProto()
+    # config.gpu_options.allow_growth = True
+    # config.gpu_options.per_process_gpu_memory_fraction = 0.7
+
     with tf.Session() as sess:
         # Start populating the filename queue.
         coord = tf.train.Coordinator()
@@ -173,5 +179,4 @@ if __name__ == "__main__":
 
         coord.request_stop()
         coord.join(threads)
-
     logging.info("DONE")
