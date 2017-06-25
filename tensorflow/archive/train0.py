@@ -1,9 +1,9 @@
 import tensorflow as tf
-from tensorflow.python.client import timeline
 import numpy as np
-import math
 import logging
 import random
+
+# import pdb; pdb.set_trace()
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
@@ -13,22 +13,26 @@ np.random.seed(RANDOM_SEED)
 tf.set_random_seed(RANDOM_SEED)
 
 INPUT_FILE = "/work/pongsakorn-u/data_500hz_noised_noip/data_500hz_noised_noip.csv"
-LOG_PATH = "/work/pongsakorn-u/tensorflow_log/10outputs_100batch_1350epochs"
 TOTAL_PARTS = 77
 WINDOW_SIZE = 5000
 META_FIELDS = 3  # Src IP, Dst IP, Port
 TOTAL_COLUMNS = (WINDOW_SIZE * 2) + META_FIELDS  # meta, noised, cleaned
 MAX_PACKETS_SIZE = 805744.0  # Bytes
 METADATA_SCALER = [1.0 / 1.0, 1.0 / 65535.0, 1.0 / 65535.0]  # Protocal, SrcPrt, DesPrt
-TOTAL_EPOCHS = 1350
+TOTAL_EPOCHS = 13000
 LEARNING_RATE = 0.001  # Adam's default learning rate
-BATCH_SIZE = 100
+BATCH_SIZE = 10
+LOAD_META_GRAPH = False
 
 # Network parameters
 N_INPUT = WINDOW_SIZE + META_FIELDS
 N_HIDDEN_1 = 5500
 N_HIDDEN_2 = 500
-N_HIDDEN_3 = 10
+N_HIDDEN_3 = 9
+
+META_GRAPH_FILE = "/work/pongsakorn-u/tensorflow_model/{}outputs/my-model.meta".format(N_HIDDEN_3)
+MODEL_FILE = "/work/pongsakorn-u/tensorflow_model/{}outputs/my-model".format(N_HIDDEN_3)
+LOG_PATH = "/work/pongsakorn-u/tensorflow_log/{}outputs".format(N_HIDDEN_3)
 
 
 def readers():
@@ -50,11 +54,7 @@ def readers():
     # Default values, in case of empty columns. Also specifies the type of the
     # decoded result.
     record_defaults = [[]] * TOTAL_COLUMNS
-    # record_defaults = [tf.constant([], dtype=tf.float64) for _ in range(TOTAL_COLUMNS)]
     columns = tf.decode_csv(value, record_defaults=record_defaults)
-    # features = tf.stack(columns)
-
-    # combined_examples = tf.stack(columns, name="combined_examples")
 
     noised_features = tf.stack(
         columns[:(WINDOW_SIZE + META_FIELDS)],
@@ -66,17 +66,18 @@ def readers():
     return (noised_features, cleaned_features)
 
 
-def preprocess_input(x, name):
+def preprocess_input_batch(x_batch, name):
     # Normalize input into range [0, 1]
-    scaler = np.array(
-        METADATA_SCALER + ([1.0 / MAX_PACKETS_SIZE] * WINDOW_SIZE))
+    scaler = METADATA_SCALER + ([1.0 / MAX_PACKETS_SIZE] * WINDOW_SIZE)
+    scaler = [scaler for _ in range(BATCH_SIZE)]
+    scaler = np.array(scaler)
     with tf.name_scope("preprocess"):
         scaler = tf.constant(
-            scaler, dtype=tf.float32, shape=[META_FIELDS + WINDOW_SIZE],
+            scaler, dtype=tf.float32, shape=[BATCH_SIZE, META_FIELDS + WINDOW_SIZE],
             name="scaler")
-    x = tf.multiply(x, scaler, name="scaled_" + name)
+    x_batch = tf.multiply(x_batch, scaler, name="scaled_" + name)
 
-    return x
+    return x_batch
 
 
 def create_network(noised_x, cleaned_x):
@@ -94,6 +95,8 @@ def create_network(noised_x, cleaned_x):
                 "decoder_h2": tf.Variable(tf.random_normal([N_HIDDEN_2, N_HIDDEN_1]), name="decoder_h2"),
                 "decoder_h3": tf.Variable(tf.random_normal([N_HIDDEN_1, N_INPUT]), name="decoder_h3"),
             }
+            # for variable in weights.values():
+            #     tf.add_to_collection("variables", variable)
 
         with tf.name_scope("biases"):
             biases = {
@@ -104,11 +107,13 @@ def create_network(noised_x, cleaned_x):
                 "decoder_b2": tf.Variable(tf.random_normal([N_HIDDEN_1]), name="decoder_b2"),
                 "decoder_b3": tf.Variable(tf.random_normal([N_INPUT]), name="decoder_b3"),
             }
+            # for variable in biases.values():
+            #     tf.add_to_collection("variables", variable)
 
         with tf.name_scope("encoder"):
             encoder_l1 = tf.nn.sigmoid(tf.add(tf.matmul(noised_x, weights["encoder_h1"]), biases["encoder_b1"]), name="encoder_l1")
             encoder_l2 = tf.nn.sigmoid(tf.add(tf.matmul(encoder_l1, weights["encoder_h2"]), biases["encoder_b2"]), name="encoder_l2")
-            encoder_l3 = tf.nn.sigmoid(tf.add(tf.matmul(encoder_l2, weights["encoder_h3"]), biases["encoder_b3"]), name="encoder_l3")
+            encoder_l3 = tf.nn.softmax(tf.add(tf.matmul(encoder_l2, weights["encoder_h3"]), biases["encoder_b3"]), name="encoder_l3")
         with tf.name_scope("decoder"):
             decoder_l1 = tf.nn.sigmoid(tf.add(tf.matmul(encoder_l3, weights["decoder_h1"]), biases["decoder_b1"]), name="decoder_l1")
             decoder_l2 = tf.nn.sigmoid(tf.add(tf.matmul(decoder_l1, weights["decoder_h2"]), biases["decoder_b2"]), name="decoder_l2")
@@ -130,31 +135,47 @@ def create_network(noised_x, cleaned_x):
 if __name__ == "__main__":
     with tf.name_scope("input_pipeline"):
         noised_examples, cleaned_examples = readers()
-        noised_examples = preprocess_input(noised_examples, name="noised_examples")
-        cleaned_examples = preprocess_input(cleaned_examples, name="cleaned_examples")
 
         # Batching
         noised_examples_batch, cleaned_examples_batch = tf.train.batch(
             [noised_examples, cleaned_examples], batch_size=BATCH_SIZE)
 
-    autoencoder = create_network(noised_examples_batch, cleaned_examples_batch)
-    train_step = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(autoencoder["cost"])
+        preprocessed_noised_examples_batch = preprocess_input_batch(noised_examples_batch, name="noised_examples_batch")
+        preprocessed_cleaned_examples_batch = preprocess_input_batch(cleaned_examples_batch, name="cleaned_examples_batch")
+
+    autoencoder = create_network(
+        preprocessed_noised_examples_batch, preprocessed_cleaned_examples_batch)
+
+    if LOAD_META_GRAPH:
+        saver = tf.train.import_meta_graph(META_GRAPH_FILE)
+    else:
+        saver = tf.train.Saver()
+        train_step = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE).minimize(autoencoder["cost"])
+        tf.add_to_collection("train_step", train_step)
+        tf.add_to_collection("noised_examples_batch", noised_examples_batch)
+        tf.add_to_collection("cleaned_examples_batch", cleaned_examples_batch)
+        tf.add_to_collection("encoded", autoencoder["encoded"])
 
     with tf.Session() as sess:
+        if LOAD_META_GRAPH:
+            logging.info("Loading model...")
+            saver.restore(sess, MODEL_FILE)
+            train_step = tf.get_collection("train_step")[0]
+
         # Start populating the filename queue.
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(coord=coord)
 
-        init = tf.global_variables_initializer()
-        sess.run(init)
+        sess.run(tf.global_variables_initializer())
 
         writer = tf.summary.FileWriter(LOG_PATH, graph=tf.get_default_graph())
         run_metadata = tf.RunMetadata()
+        merged = tf.summary.merge_all()
 
         for i in range(TOTAL_EPOCHS):
-            if i % 100 == 0:
+            if i % 1000 == 0:
                 _, summary = sess.run(
-                    [train_step, tf.summary.merge_all()],
+                    [train_step, merged],
                     options=tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE),
                     run_metadata=run_metadata)
                 # tl = timeline.Timeline(step_stats=run_metadata.step_stats)
@@ -163,15 +184,12 @@ if __name__ == "__main__":
                 writer.add_run_metadata(run_metadata, "step:{}".format(i))
                 logging.info("EPOCH: {} / {}".format(i + 1, TOTAL_EPOCHS))
             else:
-                _, summary = sess.run([train_step, tf.summary.merge_all()])
+                _, summary = sess.run([train_step, merged])
             writer.add_summary(summary, i)
 
-            # if i % 100 == 0:
-            #     # print(i, " cost", sess.run(autoencoder['cost']))
-            #     # print(i, " original", sess.run(noised_examples_batch))
-            #     # print(i, " decoded", sess.run(autoencoder['decoded']))
-
-            # import pdb; pdb.set_trace()
+        logging.info("Saving model...")
+        if not LOAD_META_GRAPH:
+            saver.save(sess, MODEL_FILE, global_step=(TOTAL_EPOCHS - 1))
 
         coord.request_stop()
         coord.join(threads)
