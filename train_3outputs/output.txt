@@ -1,0 +1,56 @@
+I tensorflow/stream_executor/dso_loader.cc:125] successfully opened CUDA library libcurand.so.8.0 locally
+I tensorflow/stream_executor/dso_loader.cc:125] successfully opened CUDA library libcuda.so.1 locally
+I tensorflow/stream_executor/dso_loader.cc:125] successfully opened CUDA library libcufft.so.8.0 locally
+I tensorflow/stream_executor/dso_loader.cc:125] successfully opened CUDA library libcudnn.so.5 locally
+I tensorflow/stream_executor/dso_loader.cc:125] successfully opened CUDA library libcublas.so.8.0 locally
+W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use SSE4.2 instructions, but these are available on your machine and could speed up CPU computations.
+W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use AVX instructions, but these are available on your machine and could speed up CPU computations.
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:885] Found device 0 with properties: 
+name: Tesla K20Xm
+major: 3 minor: 5 memoryClockRate (GHz) 0.732
+pciBusID 0000:0d:00.0
+Total memory: 5.57GiB
+Free memory: 5.50GiB
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:906] DMA: 0 
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:916] 0:   Y 
+I tensorflow/core/common_runtime/gpu/gpu_device.cc:975] Creating TensorFlow device (/gpu:0) -> (device: 0, name: Tesla K20Xm, pci bus id: 0000:0d:00.0)
+2017-02-10 01:43:02,507 Training layer 1...
+I tensorflow/stream_executor/dso_loader.cc:125] successfully opened CUDA library libcupti.so.8.0 locally
+2017-02-10 01:43:13,473 EPOCH: 1 / 80000
+2017-02-10 02:04:23,044 EPOCH: 10001 / 80000
+2017-02-10 02:28:26,543 EPOCH: 20001 / 80000
+2017-02-10 02:52:55,097 EPOCH: 30001 / 80000
+2017-02-10 03:17:38,883 EPOCH: 40001 / 80000
+2017-02-10 03:42:47,009 EPOCH: 50001 / 80000
+2017-02-10 04:06:56,564 EPOCH: 60001 / 80000
+2017-02-10 04:31:23,530 EPOCH: 70001 / 80000
+2017-02-10 04:54:35,208 Training layer 2...
+2017-02-10 04:54:35,818 EPOCH: 1 / 80000
+2017-02-10 05:15:30,180 EPOCH: 10001 / 80000
+2017-02-10 05:36:26,586 EPOCH: 20001 / 80000
+2017-02-10 05:57:29,650 EPOCH: 30001 / 80000
+2017-02-10 06:18:42,247 EPOCH: 40001 / 80000
+2017-02-10 06:39:48,875 EPOCH: 50001 / 80000
+2017-02-10 07:00:52,599 EPOCH: 60001 / 80000
+2017-02-10 07:22:00,442 EPOCH: 70001 / 80000
+2017-02-10 07:43:10,602 Training layer 3...
+2017-02-10 07:43:11,203 EPOCH: 1 / 80001
+2017-02-10 07:43:11,205 Saving model...
+2017-02-10 08:04:21,008 EPOCH: 10001 / 80001
+2017-02-10 08:04:21,010 Saving model...
+2017-02-10 08:25:35,115 EPOCH: 20001 / 80001
+2017-02-10 08:25:35,118 Saving model...
+2017-02-10 08:47:03,740 EPOCH: 30001 / 80001
+2017-02-10 08:47:03,742 Saving model...
+2017-02-10 09:08:20,948 EPOCH: 40001 / 80001
+2017-02-10 09:08:20,950 Saving model...
+2017-02-10 09:29:37,900 EPOCH: 50001 / 80001
+2017-02-10 09:29:37,902 Saving model...
+2017-02-10 09:51:02,677 EPOCH: 60001 / 80001
+2017-02-10 09:51:02,679 Saving model...
+2017-02-10 10:12:20,950 EPOCH: 70001 / 80001
+2017-02-10 10:12:20,953 Saving model...
+2017-02-10 10:33:29,851 EPOCH: 80001 / 80001
+2017-02-10 10:33:29,854 Saving model...
+2017-02-10 10:33:30,624 Saving final model...
+2017-02-10 10:33:31,454 DONE
